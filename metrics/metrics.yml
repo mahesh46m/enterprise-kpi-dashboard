@@ -1,0 +1,47 @@
+# Shared metric definitions for the enterprise KPI dashboard.
+# One source of truth: the Python dashboard and the Power BI DAX measures
+# both implement these definitions. Change a metric here and both layers
+# should change with it.
+metrics:
+  - name: net_revenue
+    label: Net Revenue
+    description: Gross sales value minus the value of returned units.
+    formula: SUM(units * unit_price) - SUM(units * unit_price * is_returned)
+    grain: order line
+    format: currency_usd
+  - name: gross_profit
+    label: Gross Profit
+    description: Net revenue minus cost of goods sold (excluding returned units).
+    formula: SUM((unit_price - unit_cost) * units * (1 - is_returned))
+    grain: order line
+    format: currency_usd
+  - name: gross_margin_pct
+    label: Gross Margin %
+    description: Gross profit as a percentage of net revenue.
+    formula: gross_profit / net_revenue * 100
+    grain: any
+    format: percent_1dp
+  - name: total_orders
+    label: Total Orders
+    description: Count of distinct orders placed.
+    formula: COUNTDISTINCT(order_id)
+    grain: order
+    format: integer
+  - name: avg_order_value
+    label: Average Order Value
+    description: Net revenue per distinct order.
+    formula: net_revenue / total_orders
+    grain: order
+    format: currency_usd
+  - name: on_time_ship_pct
+    label: On-Time Ship %
+    description: Share of shipped orders whose ship date was on or before the promised date.
+    formula: 100 * COUNTROWS(FILTER(orders, ship_date <= promised_date)) / COUNTROWS(orders)
+    grain: order
+    format: percent_1dp
+  - name: return_rate_pct
+    label: Return Rate %
+    description: Share of ordered units that were returned.
+    formula: 100 * SUM(units * is_returned) / SUM(units)
+    grain: order line
+    format: percent_1dp
