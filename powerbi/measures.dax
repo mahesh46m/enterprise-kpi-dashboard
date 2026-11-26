@@ -1,0 +1,35 @@
+-- Power BI DAX measures implementing metrics/metrics.yml.
+-- Assumes a fact table 'orders' with columns:
+--   order_id, order_date, ship_date, promised_date, region, channel,
+--   category, units, unit_price, unit_cost, is_returned (0/1)
+-- Keep these measures in sync with metrics/metrics.yml.
+
+Gross Sales = SUMX ( orders, orders[units] * orders[unit_price] )
+
+Returned Value = SUMX ( orders, orders[units] * orders[unit_price] * orders[is_returned] )
+
+Net Revenue = [Gross Sales] - [Returned Value]
+
+Gross Profit =
+SUMX (
+    orders,
+    ( orders[unit_price] - orders[unit_cost] ) * orders[units] * ( 1 - orders[is_returned] )
+)
+
+Gross Margin % = DIVIDE ( [Gross Profit], [Net Revenue] )
+
+Total Orders = DISTINCTCOUNT ( orders[order_id] )
+
+Average Order Value = DIVIDE ( [Net Revenue], [Total Orders] )
+
+On-Time Ship % =
+DIVIDE (
+    CALCULATE ( COUNTROWS ( orders ), orders[ship_date] <= orders[promised_date] ),
+    COUNTROWS ( orders )
+)
+
+Return Rate % =
+DIVIDE (
+    SUMX ( orders, orders[units] * orders[is_returned] ),
+    SUM ( orders[units] )
+)
